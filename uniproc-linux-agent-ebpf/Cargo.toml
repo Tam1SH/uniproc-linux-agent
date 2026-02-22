@@ -12,6 +12,9 @@ aya-log-ebpf = { workspace = true }
 [build-dependencies]
 which = { workspace = true }
 
+[profile.dev]
+debug = true
+
 [[bin]]
 name = "uniproc-linux-agent"
 path = "src/main.rs"

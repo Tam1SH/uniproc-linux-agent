@@ -1,19 +1,25 @@
 #![no_std]
 #![no_main]
+#![allow(unsafe_op_in_unsafe_fn)]
+
+#[allow(all, clippy::all, warnings)]
+mod vmlinux {
+    include!("./vmlinux.rs");
+}
+
+mod map;
+mod utils;
+mod programs;
 
 use aya_ebpf::{macros::tracepoint, programs::TracePointContext};
 use aya_log_ebpf::info;
 
 #[tracepoint]
 pub fn uniproc_linux_agent(ctx: TracePointContext) -> u32 {
-    match try_uniproc_linux_agent(ctx) {
-        Ok(ret) => ret,
-        Err(ret) => ret,
-    }
+    try_uniproc_linux_agent(ctx).unwrap_or_else(|ret| ret)
 }
 
 fn try_uniproc_linux_agent(ctx: TracePointContext) -> Result<u32, u32> {
-    info!(&ctx, "tracepoint sched_switch called");
     Ok(0)
 }
 

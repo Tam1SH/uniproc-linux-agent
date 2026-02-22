@@ -7,9 +7,9 @@ license.workspace = true
 
 [dependencies]
 uniproc-linux-agent-common = { path = "../uniproc-linux-agent-common", features = ["user"] }
+aya = { workspace = true }
 
 anyhow = { workspace = true, default-features = true }
-aya = { workspace = true }
 aya-log = { workspace = true }
 env_logger = { workspace = true }
 libc = { workspace = true }
@@ -20,6 +20,7 @@ tokio = { workspace = true, features = [
     "rt-multi-thread",
     "net",
     "signal",
+    "time"
 ] }
 [build-dependencies]
 anyhow = { workspace = true }

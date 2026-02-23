@@ -1,3 +1,5 @@
 mod globals;
 mod processes;
-mod vsock;
+mod sockets;
+mod http_detect;
+mod disk;

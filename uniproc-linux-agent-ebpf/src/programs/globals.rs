@@ -59,7 +59,7 @@ pub fn global_cpu_monitor(ctx: TracePointContext) -> i32 {
 }
 
 // Approximate implementation of si_mem_available()
-// https://elixir.bootlin.com/linux/v6.19.2/source/mm/show_mem.c#L32
+// https://github.com/microsoft/WSL2-Linux-Kernel/blob/427645e3db3a8896714f22a3d3fe0c3f7b317ad4/mm/show_mem.c#L32
 #[inline(always)]
 unsafe fn update_mem_stats(mem: *mut MemStats) {
     let shift = SHIFT.get(0).copied().unwrap_or(0);

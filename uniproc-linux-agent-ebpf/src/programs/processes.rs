@@ -8,17 +8,14 @@ use aya_ebpf::programs::TracePointContext;
 use macros::unsafe_body;
 use uniproc_linux_agent_common::ProcessStats;
 use crate::{bpf_read, bpf_read_trace};
+use crate::constants::{MM_ANONPAGES, MM_FILEPAGES, MM_SHMEMPAGES};
 use crate::programs::globals::SHIFT;
 use crate::vmlinux::{task_struct, trace_event_raw_sched_process_fork, upid};
 
 #[map]
 pub static PROCESS_STATS: LruHashMap<u32, ProcessStats> = LruHashMap::with_max_entries(4096, 0);
 
-//https://elixir.bootlin.com/linux/v6.12.6/source/include/linux/mm_types_task.h
-pub const MM_FILEPAGES:  usize = 0;
-pub const MM_ANONPAGES:  usize = 1;
-pub const MM_SWAPENTS:   usize = 2;
-pub const MM_SHMEMPAGES: usize = 3;
+
 
 const RSS_COUNTERS: [usize; 3] = [MM_FILEPAGES, MM_ANONPAGES, MM_SHMEMPAGES];
 

@@ -44,6 +44,32 @@ pub struct ProcessStats {
 
     pub p9_rx_bytes: u64,
     pub p9_tx_bytes: u64,
+
+    pub tcp_tx_lo_bytes: u64,
+    pub tcp_rx_lo_bytes: u64,
+
+    pub tcp_tx_remote_bytes: u64,
+    pub tcp_rx_remote_bytes: u64,
+
+    pub udp_tx_lo_bytes: u64,
+    pub udp_rx_lo_bytes: u64,
+
+    pub udp_tx_remote_bytes: u64,
+    pub udp_rx_remote_bytes: u64,
+
+    pub uds_tx_bytes: u64,
+    pub uds_rx_bytes: u64,
+
+    pub disk_read_bytes: u64,
+    pub disk_write_bytes: u64,
+
+    pub disk_read_iops: u64,
+    pub disk_write_iops: u64,
+
+    pub pipe_read_bytes: u64,
+    pub pipe_write_bytes: u64,
+    
+    pub sendfile_bytes: u64,
 }
 
 #[cfg(feature = "user")]

@@ -8,6 +8,10 @@ pub struct ProcessReport {
     pub local_pid: u32,
     pub cpu_usage_perc: f64,
     pub rss_mb: f64,
+    
+    pub vsock_rx_bytes: u64,
+    pub vsock_tx_bytes: u64,
+    
 }
 
 pub struct ProcessMetricsState {
@@ -48,6 +52,9 @@ impl ProcessMetricsState {
                     local_pid: raw.local_pid,
                     cpu_usage_perc: cpu_usage,
                     rss_mb: raw.rss_kb as f64 / 1024.0,
+                    
+                    vsock_rx_bytes: raw.vsock_tx_bytes,
+                    vsock_tx_bytes: raw.vsock_rx_bytes,
                 }
             })
             .collect();

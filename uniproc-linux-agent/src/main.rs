@@ -1,7 +1,7 @@
 use anyhow::anyhow;
-use aya::Ebpf;
+use aya::{Btf, Ebpf};
 use aya::maps::{Array, HashMap, PerCpuArray};
-use aya::programs::TracePoint;
+use aya::programs::{FEntry, FExit, KProbe, TracePoint};
 use aya::util::kernel_symbols;
 use log::{debug, warn};
 use std::time::Duration;
@@ -12,7 +12,7 @@ mod globals;
 mod process_metrics_state;
 
 use crate::globals::{calculate_usage, fetch_cpu_snapshot};
-use crate::process_metrics_state::ProcessMetricsState;
+use crate::process_metrics_state::{ProcessMetricsState, ProcessReport};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -125,6 +125,31 @@ fn attach_programs(ebpf: &mut Ebpf) -> anyhow::Result<()> {
     fork_prog.load()?;
     fork_prog.attach("sched", "sched_process_fork")?;
 
+    let btf = Btf::from_sys_fs()?;
+
+    let program: &mut FExit = ebpf.program_mut("socket_tracing_exit")
+        .unwrap()
+        .try_into()?;
+
+    program.load("sock_recvmsg", &btf)?;
+    program.attach()?;
+
+    let program: &mut FExit = ebpf.program_mut("socket_tracing_enter")
+        .unwrap()
+        .try_into()?;
+
+    program.load("sock_sendmsg", &btf)?;
+    program.attach()?;
+
+    let program: &mut KProbe = ebpf.program_mut("p9_client_rpc_kretprobe")
+        .ok_or_else(|| anyhow::anyhow!("program not found"))?
+        .try_into()?;
+
+    program.load()?;
+
+    program.attach("p9_client_rpc", 0)?;
+
+
     Ok(())
 }
 
@@ -139,7 +164,7 @@ async fn main_loop(ebpf: Ebpf) {
     let mut metrics_engine = ProcessMetricsState::new();
 
     loop {
-        tokio::time::sleep(Duration::from_secs(1)).await;
+        tokio::time::sleep(Duration::from_millis(100)).await;
 
         let raw_stats: Vec<ProcessStats> = proc_stats_map
             .iter()
@@ -148,17 +173,22 @@ async fn main_loop(ebpf: Ebpf) {
 
         let mut reports = metrics_engine.normalize(raw_stats);
 
-        reports.sort_by(|a, b| b.cpu_usage_perc.partial_cmp(&a.cpu_usage_perc).unwrap());
+        reports.sort_by(|a, b| b.vsock_rx_bytes.partial_cmp(&a.vsock_rx_bytes).unwrap());
 
         print!("\x1B[2J\x1B[H");
         println!("{:<10} {:<10} {:>10} {:>12}", "G-PID", "L-PID", "CPU %", "RSS (MB)");
+        println!("all process: {}, size: {}", reports.len(), reports.len() * size_of::<ProcessReport>());
         println!("{}", "-".repeat(46));
 
         for rep in reports.iter().take(5) {
             println!(
-                "{:<10} {:<10} {:>9.1}% {:>10.2} MB",
-                rep.pid, rep.local_pid, rep.cpu_usage_perc, rep.rss_mb
+                "{:<10} {:<10} {:>9.1}% {:>10.2} MB {:>10.2} RX {:>10.2} TX",
+                rep.pid, rep.local_pid, rep.cpu_usage_perc, rep.rss_mb, rep.vsock_rx_bytes, rep.vsock_tx_bytes
             );
         }
     }
 }
+
+
+
+

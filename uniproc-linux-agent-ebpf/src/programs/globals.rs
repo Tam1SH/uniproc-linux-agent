@@ -3,7 +3,7 @@ use aya_ebpf::helpers::{bpf_ktime_get_ns, bpf_probe_read_kernel, bpf_probe_read_
 use aya_ebpf::macros::tracepoint;
 use aya_ebpf::maps::Array;
 use aya_ebpf::programs::TracePointContext;
-use aya_log_ebpf::info;
+use macros::unsafe_body;
 use uniproc_linux_agent_common::{CpuStats, MemStats, INDEX_IDLE_TICKS, INDEX_TOTAL_TICKS};
 use crate::programs::processes::update_process_metrics;
 use crate::utils::get_pid;
@@ -27,7 +27,8 @@ const MEM_UPDATE_INTERVAL_NS: u64 = 1_000_000;
 static KSYM_ADDRS: Array<u64> = Array::with_max_entries(4, 0);
 
 #[tracepoint(name = "sched_stat_runtime", category = "sched")]
-pub fn global_cpu_monitor(ctx: TracePointContext) -> i32 { unsafe {
+#[unsafe_body]
+pub fn global_cpu_monitor(ctx: TracePointContext) -> i32 {
 
     let args = &*(ctx.as_ptr() as *const trace_event_raw_sched_stat_runtime);
 
@@ -55,7 +56,7 @@ pub fn global_cpu_monitor(ctx: TracePointContext) -> i32 { unsafe {
     }
 
     0
-}}
+}
 
 // Approximate implementation of si_mem_available()
 // https://elixir.bootlin.com/linux/v6.19.2/source/mm/show_mem.c#L32

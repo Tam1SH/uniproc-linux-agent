@@ -5,9 +5,8 @@ edition.workspace = true
 
 [dependencies]
 uniproc-linux-agent-common = { path = "../uniproc-linux-agent-common" }
-
+macros = { workspace = true }
 aya-ebpf = { workspace = true }
-aya-log-ebpf = { workspace = true }
 
 [build-dependencies]
 which = { workspace = true }

@@ -40141,6 +40141,29 @@ pub struct old_timespec32 {
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct p9_fcall {
+    pub size: u32_,
+    pub id: u8_,
+    pub tag: u16_,
+    pub offset: usize,
+    pub capacity: usize,
+    pub cache: *mut kmem_cache,
+    pub sdata: *mut u8_,
+    pub zc: bool_,
+}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct p9_req_t {
+    pub status: ::aya_ebpf::cty::c_int,
+    pub t_err: ::aya_ebpf::cty::c_int,
+    pub refcount: refcount_t,
+    pub wq: wait_queue_head_t,
+    pub tc: p9_fcall,
+    pub rc: p9_fcall,
+    pub req_list: list_head,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct pacct_struct {
     pub ac_flag: ::aya_ebpf::cty::c_int,
     pub ac_exitcode: ::aya_ebpf::cty::c_long,

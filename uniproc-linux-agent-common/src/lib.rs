@@ -32,12 +32,18 @@ pub struct MemStats {
 
 
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Default, Clone, Copy)]
 pub struct ProcessStats {
     pub global_pid: u32,
     pub local_pid: u32,
     pub cpu_runtime_ns: u64,
     pub rss_kb: u64,
+
+    pub vsock_rx_bytes: u64,
+    pub vsock_tx_bytes: u64,
+
+    pub p9_rx_bytes: u64,
+    pub p9_tx_bytes: u64,
 }
 
 #[cfg(feature = "user")]

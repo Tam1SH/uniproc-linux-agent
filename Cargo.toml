@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "macros",
     "uniproc-linux-agent",
     "uniproc-linux-agent-common",
     "uniproc-linux-agent-ebpf",
@@ -12,6 +13,7 @@ license = "MIT OR Apache-2.0"
 edition = "2024"
 
 [workspace.dependencies]
+macros = { path = "macros" }
 aya = { git = "https://github.com/aya-rs/aya", default-features = false }
 aya-build = { git = "https://github.com/aya-rs/aya", default-features = false }
 aya-ebpf = { git = "https://github.com/aya-rs/aya", default-features = false }

@@ -3,16 +3,15 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
 #[allow(all, clippy::all, warnings)]
-mod vmlinux {
-    include!("./vmlinux.rs");
-}
+mod vmlinux;
 
 mod map;
 mod utils;
 mod programs;
 
+mod constants;
+
 use aya_ebpf::{macros::tracepoint, programs::TracePointContext};
-use aya_log_ebpf::info;
 
 #[tracepoint]
 pub fn uniproc_linux_agent(ctx: TracePointContext) -> u32 {

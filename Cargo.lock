@@ -102,36 +102,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aya-log-ebpf"
-version = "0.1.2"
-source = "git+https://github.com/aya-rs/aya#c42157f0b566940b849b699109d1c660a0733fd3"
-dependencies = [
- "aya-ebpf",
- "aya-log-common",
- "aya-log-ebpf-macros",
-]
-
-[[package]]
-name = "aya-log-ebpf-macros"
-version = "0.1.1"
-source = "git+https://github.com/aya-rs/aya#c42157f0b566940b849b699109d1c660a0733fd3"
-dependencies = [
- "aya-log-common",
- "aya-log-parser",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "aya-log-parser"
-version = "0.1.14"
-source = "git+https://github.com/aya-rs/aya#c42157f0b566940b849b699109d1c660a0733fd3"
-dependencies = [
- "aya-log-common",
-]
-
-[[package]]
 name = "aya-obj"
 version = "0.2.2"
 source = "git+https://github.com/aya-rs/aya#c42157f0b566940b849b699109d1c660a0733fd3"
@@ -247,7 +217,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -314,6 +284,15 @@ name = "log"
 version = "0.4.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e5032e24019045c762d3c0f28f5b6b8bbf38563a65908389bf7978758920897"
+
+[[package]]
+name = "macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "memchr"
@@ -439,7 +418,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.11.0",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -613,7 +592,7 @@ name = "uniproc-linux-agent-ebpf"
 version = "0.1.0"
 dependencies = [
  "aya-ebpf",
- "aya-log-ebpf",
+ "macros",
  "uniproc-linux-agent-common",
  "which 6.0.3",
 ]

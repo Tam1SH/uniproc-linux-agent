@@ -37,8 +37,11 @@ pub struct ProcessStats {
     pub global_pid: u32,
     pub local_pid: u32,
     pub cpu_runtime_ns: u64,
+    
     pub rss_kb: u64,
-
+    
+    pub last_active_ns: u64,
+    
     pub vsock_rx_bytes: u64,
     pub vsock_tx_bytes: u64,
 
@@ -68,19 +71,9 @@ pub struct ProcessStats {
 
     pub pipe_read_bytes: u64,
     pub pipe_write_bytes: u64,
-    
+
     pub sendfile_bytes: u64,
 }
-
-#[cfg(feature = "user")]
-unsafe impl aya::Pod for ProcessStats {}
-
-#[cfg(feature = "user")]
-unsafe impl aya::Pod for CpuStats {}
-
-#[cfg(feature = "user")]
-unsafe impl aya::Pod for MemStats {}
-
 
 pub const INDEX_TOTAL_TICKS: u32 = 0;
 pub const INDEX_IDLE_TICKS: u32 = 1;

@@ -28,6 +28,13 @@ impl ProcessMetricsState {
     pub fn normalize(&mut self, raw_data: Vec<ProcessStats>) -> Vec<ProcessReport> {
         let now = Instant::now();
 
+        let current_pids: std::collections::HashSet<u32> = raw_data
+            .iter()
+            .map(|raw| raw.global_pid)
+            .collect();
+
+        self.history.retain(|pid, _| current_pids.contains(pid));
+
         let mut reports: Vec<ProcessReport> = raw_data
             .into_iter()
             .map(|raw| {
@@ -52,17 +59,11 @@ impl ProcessMetricsState {
                     local_pid: raw.local_pid,
                     cpu_usage_perc: cpu_usage,
                     rss_mb: raw.rss_kb as f64 / 1024.0,
-                    
                     vsock_rx_bytes: raw.vsock_tx_bytes,
                     vsock_tx_bytes: raw.vsock_rx_bytes,
                 }
             })
             .collect();
-
-        if self.history.len() > 4096 {
-            let active_pids: HashMap<u32, ()> = reports.iter().map(|r| (r.pid, ())).collect();
-            self.history.retain(|pid, _| active_pids.contains_key(pid));
-        }
 
         reports
     }

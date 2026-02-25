@@ -1,17 +1,24 @@
-use which::which;
+use std::env;
+use libbpf_cargo::SkeletonBuilder;
+use std::path::PathBuf;
 
-/// Building this crate has an undeclared dependency on the `bpf-linker` binary. This would be
-/// better expressed by [artifact-dependencies][bindeps] but issues such as
-/// https://github.com/rust-lang/cargo/issues/12385 make their use impractical for the time being.
-///
-/// This file implements an imperfect solution: it causes cargo to rebuild the crate whenever the
-/// mtime of `which bpf-linker` changes. Note that possibility that a new bpf-linker is added to
-/// $PATH ahead of the one used as the cache key still exists. Solving this in the general case
-/// would require rebuild-if-changed-env=PATH *and* rebuild-if-changed={every-directory-in-PATH}
-/// which would likely mean far too much cache invalidation.
-///
-/// [bindeps]: https://doc.rust-lang.org/nightly/cargo/reference/unstable.html?highlight=feature#artifact-dependencies
+const SRC: &str = "src/prog.bpf.c";
+
 fn main() {
-    let bpf_linker = which("bpf-linker").unwrap();
-    println!("cargo:rerun-if-changed={}", bpf_linker.to_str().unwrap());
+    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+
+    SkeletonBuilder::new()
+        .source(SRC)
+        .clang_args(["-Isrc"])
+        .build_and_generate(&out_dir.join("prog.skel.rs"))
+        .unwrap();
+
+    println!("cargo:rerun-if-changed={SRC}");
+    println!("cargo:rerun-if-changed=src/maps.h");
+    println!("cargo:rerun-if-changed=src/constants.h");
+    println!("cargo:rerun-if-changed=src/utils.h");
+    println!("cargo:rerun-if-changed=src/sockets.h");
+    println!("cargo:rerun-if-changed=src/disk.h");
+    println!("cargo:rerun-if-changed=src/processes.h");
+    println!("cargo:rerun-if-changed=src/globals.h");
 }

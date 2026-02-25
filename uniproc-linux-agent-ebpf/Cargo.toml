@@ -3,13 +3,8 @@ name = "uniproc-linux-agent-ebpf"
 version = "0.1.0"
 edition.workspace = true
 
-[dependencies]
-uniproc-linux-agent-common = { path = "../uniproc-linux-agent-common" }
-macros = { workspace = true }
-aya-ebpf = { workspace = true }
-
 [build-dependencies]
-which = { workspace = true }
+libbpf-cargo = "0.26.0"
 
 [profile.dev]
 debug = true

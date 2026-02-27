@@ -1,23 +1,30 @@
+use std::collections::hash_map::Iter;
 use std::collections::HashMap;
 use std::fs;
 use std::mem::MaybeUninit;
+use std::os::fd::{AsFd, AsRawFd};
 use std::time::Duration;
 use anyhow::anyhow;
 use libbpf_rs::{MapCore, MapFlags};
 use libbpf_rs::skel::{OpenSkel, Skel, SkelBuilder};
 use tokio::signal;
-use uniproc_linux_agent_common::{CpuStats, MemStats, ProcessStats};
+use uniproc_linux_agent_common::{ProcessStats};
 
 
 mod process_metrics_state;
-mod proc_checker;
+mod iter_gc;
+mod seed;
+mod batch_lookup;
+mod name_cache;
 
 mod prog {
     include!(concat!(env!("OUT_DIR"), "/prog.skel.rs"));
 }
 
 use prog::ProgSkelBuilder;
-use crate::proc_checker::{initialize_proc_map, ProcChecker};
+use crate::batch_lookup::BatchLookup;
+use crate::iter_gc::IterGc;
+use crate::name_cache::{CacheEntry, NameCache};
 use crate::process_metrics_state::ProcessReport;
 
 #[tokio::main]
@@ -26,6 +33,7 @@ async fn main() -> anyhow::Result<()> {
 
     let mut skel_builder = ProgSkelBuilder::default();
     let mut open_object = MaybeUninit::uninit();
+
     let open_skel = skel_builder.open(&mut open_object)?;
 
     let mut skel = open_skel.load()?;
@@ -33,7 +41,10 @@ async fn main() -> anyhow::Result<()> {
     setup_mem_config(&mut skel)?;
     setup_kernel_symbols(&mut skel)?;
 
+
     skel.attach()?;
+    let seed_prog_fd = skel.progs.seed_processes.as_fd().as_raw_fd();
+    seed::seed_existing_processes(seed_prog_fd)?;
 
     println!("Agent is running. Press Ctrl-C to stop...");
 
@@ -108,43 +119,60 @@ fn read_kallsyms() -> anyhow::Result<HashMap<String, u64>> {
     Ok(map)
 }
 
-async fn main_loop(skel: prog::ProgSkel<'_>) {
+async fn main_loop(mut skel: prog::ProgSkel<'_>) {
     let mut metrics_engine = process_metrics_state::ProcessMetricsState::new();
-    let _ = initialize_proc_map(&skel.maps.process_stats_map);
+    let iter_prog_fd = skel.progs.list_processes.as_fd().as_raw_fd();
+    let iter_check_name_fd = skel.progs.task_names.as_fd().as_raw_fd();
+    let mut gc = IterGc::new(10, iter_prog_fd);
+    let mut cache = NameCache::new(iter_check_name_fd);
+    let mut batch = BatchLookup::new();
+
     loop {
-        tokio::time::sleep(Duration::from_millis(300)).await;
+        tokio::time::sleep(Duration::from_millis(100)).await;
 
-        let map = &skel.maps.process_stats_map;
+        let map = &mut skel.maps.process_stats_map;
+        let _ = gc.maybe_gc(map);
 
-        let raw_stats: Vec<ProcessStats> = map
-            .keys()
-            .filter_map(|k| {
-                let val = map.lookup(&k, MapFlags::ANY).ok()??;
-                if val.len() < std::mem::size_of::<ProcessStats>() { return None; }
-                Some(unsafe { *(val.as_ptr() as *const ProcessStats) })
-            })
-            .collect();
-
-        let mut reports = metrics_engine.normalize(raw_stats);
-        reports.sort_by(|a, b| b.cpu_usage_perc.partial_cmp(&a.cpu_usage_perc).unwrap());
-
-        let _ = ProcChecker.tick(&skel.maps.process_stats_map);
-
-        print!("\x1B[2J\x1B[H");
-        println!("{:<10} {:<10} {:>10} {:>12}", "G-PID", "L-PID", "CPU %", "RSS (MB)");
-        println!("all process: {}, size: {}", reports.len(), reports.len() * size_of::<ProcessReport>());
-        println!("{}", "-".repeat(46));
-
-        for rep in reports.iter().take(5) {
-            println!(
-                "{:<10} {:<10} {:>9.1}% {:>10.2} MB {:>10.2} RX {:>10.2} TX",
-                rep.pid, rep.local_pid, rep.cpu_usage_perc, rep.rss_mb, rep.vsock_rx_bytes, rep.vsock_tx_bytes
+        let _ = cache.refresh(gc.live_pids());
+        if let Ok(batch) = batch.lookup(&skel.maps.process_stats_map) {
+            let reports = metrics_engine.normalize(
+                batch.iter().copied()
             );
+            #[cfg(debug_assertions)]
+            debug_print(&reports, &cache);
         }
 
-
-        println!("processes: {}, /proc count: {}", reports.len(), count_processes());
     }
+}
+
+#[cfg(debug_assertions)]
+fn debug_print(reports: &[ProcessReport], cache: &NameCache) {
+    let mut sorted = reports.to_vec();
+    sorted.sort_by(|a, b| b.cpu_usage_perc.partial_cmp(&a.cpu_usage_perc).unwrap());
+
+    print!("\x1B[2J\x1B[H");
+    println!("{:<10} {:<10} {:>10} {:>12}", "G-PID", "L-PID", "CPU %", "RSS (MB)");
+    println!("all process: {}, size: {}",
+             sorted.len(), sorted.len() * std::mem::size_of::<ProcessReport>());
+    println!("{}", "-".repeat(46));
+
+    let names: HashMap<&u32, &CacheEntry> = cache.get_names().collect();
+
+    for rep in sorted.iter().take(5) {
+        let name = names
+            .get(&rep.pid)
+            .map(|e| String::from_utf8_lossy(&e.name))
+            .unwrap_or_default();
+        let name_col = format!("{:<20}", name.trim_end_matches('\0').chars().take(20).collect::<String>());
+
+        println!(
+            "{} {:<10} {:<10} {:>9.1}% {:>10.2} MB {:>10.2} RX {:>10.2} TX",
+            name_col, rep.pid, rep.local_pid, rep.cpu_usage_perc, rep.rss_mb,
+            rep.vsock_rx_bytes, rep.vsock_tx_bytes
+        );
+    }
+
+    println!("processes: {}, /proc: {}", sorted.len(), count_processes());
 }
 
 fn count_processes() -> usize {

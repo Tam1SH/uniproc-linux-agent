@@ -9,7 +9,17 @@ add_definitions(-D__BPF_TRACING__ -D__x86_64__)
 
 add_executable(ebpf_prog
         uniproc-linux-agent-ebpf/src/prog.bpf.c
-        uniproc-linux-agent-ebpf/src/constants.h
-        uniproc-linux-agent-ebpf/src/maps.h
-        uniproc-linux-agent-ebpf/src/utils.h
-        uniproc-linux-agent-ebpf/src/vmlinux.h)
+        uniproc-linux-agent-ebpf/src/include/constants.h
+        uniproc-linux-agent-ebpf/src/include/maps.h
+        uniproc-linux-agent-ebpf/src/vmlinux.h
+        uniproc-linux-agent-ebpf/src/include/common.h
+        uniproc-linux-agent-ebpf/src/include/loopback.h
+        uniproc-linux-agent-ebpf/src/include/socket.h
+        uniproc-linux-agent-ebpf/src/include/disk.h
+        uniproc-linux-agent-ebpf/src/include/process.h
+        uniproc-linux-agent-ebpf/src/include/mem.h
+        uniproc-linux-agent-ebpf/src/probes/sockets.bpf.c
+        uniproc-linux-agent-ebpf/src/probes/disk.bpf.c
+        uniproc-linux-agent-ebpf/src/probes/process.bpf.c
+        uniproc-linux-agent-ebpf/src/probes/globals.bpf.c
+        uniproc-linux-agent-ebpf/src/probes/seed.bpf.c)

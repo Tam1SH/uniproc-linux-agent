@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, fs};
 use libbpf_cargo::SkeletonBuilder;
 use std::path::PathBuf;
 
@@ -14,11 +14,27 @@ fn main() {
         .unwrap();
 
     println!("cargo:rerun-if-changed={SRC}");
-    println!("cargo:rerun-if-changed=src/maps.h");
-    println!("cargo:rerun-if-changed=src/constants.h");
-    println!("cargo:rerun-if-changed=src/utils.h");
-    println!("cargo:rerun-if-changed=src/sockets.h");
-    println!("cargo:rerun-if-changed=src/disk.h");
-    println!("cargo:rerun-if-changed=src/processes.h");
-    println!("cargo:rerun-if-changed=src/globals.h");
+
+    for dir in ["src/include", "src/probes"] {
+        watch_dir(dir);
+    }
+}
+
+fn watch_dir(path: &str) {
+    let p = PathBuf::from(path);
+    if p.is_file() {
+        println!("cargo:rerun-if-changed={path}");
+        return;
+    }
+    if let Ok(entries) = fs::read_dir(&p) {
+        for entry in entries.filter_map(|e| e.ok()) {
+            let entry_path = entry.path();
+            let s = entry_path.to_string_lossy();
+            if entry_path.is_dir() {
+                watch_dir(&s);
+            } else {
+                println!("cargo:rerun-if-changed={s}");
+            }
+        }
+    }
 }

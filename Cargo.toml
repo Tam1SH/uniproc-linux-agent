@@ -6,7 +6,10 @@ members = [
     "uniproc-linux-agent-common",
     "uniproc-linux-agent-ebpf",
 ]
-default-members = ["uniproc-linux-agent", "uniproc-linux-agent-common"]
+default-members = [
+    "uniproc-linux-agent",
+    "uniproc-linux-agent-common",
+]
 
 [workspace.package]
 license = "MIT OR Apache-2.0"

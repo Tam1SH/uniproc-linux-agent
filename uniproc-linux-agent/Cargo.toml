@@ -7,7 +7,7 @@ license.workspace = true
 
 [dependencies]
 uniproc-linux-agent-common = { path = "../uniproc-linux-agent-common", features = ["user"] }
-
+rustc-hash = "2.1.1"
 anyhow = { workspace = true, default-features = true }
 env_logger = { workspace = true }
 libc = { workspace = true }

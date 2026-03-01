@@ -2,11 +2,8 @@ use std::fs::File;
 use std::io::{self, Read};
 use std::os::unix::io::{FromRawFd, RawFd};
 
-// linux/bpf.h, enum bpf_cmd
 const BPF_LINK_CREATE: i64 = 28;
 const BPF_ITER_CREATE: i64 = 33;
-
-// linux/bpf.h, enum bpf_attach_type
 const BPF_TRACE_ITER: u32 = 28;
 
 pub fn seed_existing_processes(prog_fd: RawFd) -> anyhow::Result<()> {
@@ -29,12 +26,12 @@ pub fn seed_existing_processes(prog_fd: RawFd) -> anyhow::Result<()> {
 }
 
 fn bpf_link_create(prog_fd: RawFd) -> anyhow::Result<RawFd> {
-    // Выравнивание и размер должны совпадать с union bpf_attr (128 байт).
+
     #[repr(C, align(8))]
     struct BpfLinkCreateAttr {
         prog_fd:     u32,
-        target_fd:   u32, // 0 для iter/task — target не нужен
-        attach_type: u32, // BPF_TRACE_ITER = 28
+        target_fd:   u32,
+        attach_type: u32,
         flags:       u32,
         _pad:        [u8; 112],
     }

@@ -6,22 +6,18 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-uniproc-linux-agent-common = { path = "../uniproc-linux-agent-common", features = ["user"] }
 rustc-hash = "2.1.1"
 anyhow = { workspace = true, default-features = true }
 env_logger = { workspace = true }
 libc = { workspace = true }
 log = { workspace = true }
-tokio = { workspace = true, features = [
-    "macros",
-    "rt",
-    "rt-multi-thread",
-    "net",
-    "signal",
-    "time"
-] }
-
+compio = "0.18.0"
+ogurpchik = { git = "https://github.com/Tam1SH/oguRPChik", branch = "master", features = ["vsock"] }
 libbpf-rs = "0.26.0"
+serde_json = "1.0.149"
+uniproc-protocol = { git = "https://github.com/Tam1SH/uniproc-protocol", branch = "master" }
+tracing-subscriber = "0.3.22"
+futures = "0.3.32"
 
 [build-dependencies]
 libbpf-cargo = "0.26.0"

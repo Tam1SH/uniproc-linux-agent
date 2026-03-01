@@ -2,14 +2,14 @@ use std::io;
 use std::mem::size_of;
 use std::os::fd::AsRawFd;
 use libbpf_rs::MapCore;
-use uniproc_linux_agent_common::ProcessStats;
+use crate::process_metrics_state::RawProcessStats;
 
 const BPF_MAP_LOOKUP_BATCH: i64 = 24;
 
 pub struct BatchLookup {
     keys_buf:   Vec<[u8; 4]>,
-    values_buf: Vec<[u8; size_of::<ProcessStats>()]>,
-    out_buf:    Vec<ProcessStats>,
+    values_buf: Vec<[u8; size_of::<RawProcessStats>()]>,
+    out_buf:    Vec<RawProcessStats>,
 }
 
 impl BatchLookup {
@@ -21,13 +21,13 @@ impl BatchLookup {
         }
     }
 
-    pub fn lookup(&mut self, map: &impl MapCore) -> anyhow::Result<&[ProcessStats]> {
+    pub fn lookup(&mut self, map: &impl MapCore) -> anyhow::Result<&[RawProcessStats]> {
         let map_fd = map.as_fd().as_raw_fd();
         
         let cap = (map.max_entries() as usize).next_power_of_two();
         if self.keys_buf.len() < cap {
             self.keys_buf.resize(cap, [0u8; 4]);
-            self.values_buf.resize(cap, [0u8; size_of::<ProcessStats>()]);
+            self.values_buf.resize(cap, [0u8; size_of::<RawProcessStats>()]);
         }
 
         self.out_buf.clear();
@@ -49,7 +49,7 @@ impl BatchLookup {
         let mut in_batch_ptr: u64 = 0;
 
         loop {
-            let mut attr = BatchAttr {
+            let attr = BatchAttr {
                 in_batch:   in_batch_ptr,
                 out_batch:  out_batch.as_mut_ptr() as u64,
                 keys:       self.keys_buf.as_mut_ptr() as u64,
@@ -69,7 +69,7 @@ impl BatchLookup {
 
             for i in 0..attr.count as usize {
                 self.out_buf.push(unsafe {
-                    *(self.values_buf[i].as_ptr() as *const ProcessStats)
+                    *(self.values_buf[i].as_ptr() as *const RawProcessStats)
                 });
             }
 
@@ -82,15 +82,13 @@ impl BatchLookup {
 
                     let new_cap = self.keys_buf.len() * 2;
                     self.keys_buf.resize(new_cap, [0u8; 4]);
-                    self.values_buf.resize(new_cap, [0u8; size_of::<ProcessStats>()]);
+                    self.values_buf.resize(new_cap, [0u8; size_of::<RawProcessStats>()]);
                     in_batch_ptr = 0;
                     self.out_buf.clear();
                     continue;
                 }
                 _ => return Err(e.into()),
             }
-
-            in_batch_ptr = out_batch.as_ptr() as u64;
         }
 
         Ok(&self.out_buf)

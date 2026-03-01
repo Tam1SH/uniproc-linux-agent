@@ -3,12 +3,10 @@ resolver = "2"
 members = [
     "macros",
     "uniproc-linux-agent",
-    "uniproc-linux-agent-common",
     "uniproc-linux-agent-ebpf",
 ]
 default-members = [
-    "uniproc-linux-agent",
-    "uniproc-linux-agent-common",
+    "uniproc-linux-agent"
 ]
 
 [workspace.package]
